@@ -2,7 +2,7 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 from typing_extensions import Annotated
 
-from database import engine, SessionLocal
+from database import SessionLocal
 from pytz import timezone
 
 tashkent = timezone("Asia/Tashkent")

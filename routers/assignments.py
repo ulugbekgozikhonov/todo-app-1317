@@ -1,15 +1,20 @@
-from fastapi import APIRouter, status, HTTPException, Path
+from typing import Annotated
+
+from fastapi import APIRouter, status, HTTPException, Path, Depends
 
 from general import db_dependency
 from models import Assignment
 from schemas import *
+from .auth import get_current_user
 
 router = APIRouter(prefix="/assignments", tags=["assignments"])
 
+user_dependency = Annotated[dict, Depends(get_current_user)]
+
 
 @router.get("", status_code=status.HTTP_200_OK)
-async def get_assignments(db: db_dependency):
-	assignments = db.query(Assignment).all()
+async def get_assignments(db: db_dependency, user: user_dependency):
+	assignments = db.query(Assignment).filter_by(owner_id=user.get("id")).all()
 	return {"assignments": assignments}
 
 
@@ -22,8 +27,8 @@ async def get_assignment_by_id(db: db_dependency, assignment_id: int = Path(gt=0
 
 
 @router.post("/create", status_code=status.HTTP_201_CREATED)
-async def create_assignments(db: db_dependency, assignment_request: AssignmentRequest):
-	assignment_model = Assignment(**assignment_request.dict())
+async def create_assignments(user: user_dependency, db: db_dependency, assignment_request: AssignmentRequest):
+	assignment_model = Assignment(**assignment_request.dict(), owner_id=user.get("id"))
 
 	db.add(assignment_model)
 	db.commit()
