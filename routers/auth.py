@@ -28,8 +28,8 @@ def authenticate_user(username: str, password: str, db: db_dependency):
 	return user
 
 
-def create_access_token(username: str, user_id: int):
-	encode = {"sub": username, "id": user_id}
+def create_access_token(username: str, user_id: int, role: str):
+	encode = {"sub": username, "id": user_id, 'role': role}
 	expires = datetime.now(tz=tashkent) + timedelta(hours=20)
 	encode.update({"exp": expires})
 
@@ -41,13 +41,13 @@ async def get_current_user(token: str = Depends(oauth2_bearer)):
 		payload = jwt.decode(token=token, key=SECRET_KEY, algorithms=[ALGORITHM])
 		username = payload.get("sub")
 		user_id = payload.get("id")
+		role = payload.get('role')
 		if username is None or user_id is None:
 			raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate user.1")
-		return {"username": username, "id": user_id}
+		return {"username": username, "id": user_id, 'role': role}
 	except JWTError as error:
 		print("JWT ERROR: ", error)
 		raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate user.2")
-
 
 @router.post("/create-user", status_code=status.HTTP_201_CREATED)
 async def create_user(user_request: CreateUserSchema, db: db_dependency):
@@ -70,5 +70,5 @@ async def get_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], 
 	user: User = authenticate_user(form_data.username, form_data.password, db)
 	if user is None:
 		raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate user.3")
-	token = create_access_token(user.username, user.id)
+	token = create_access_token(user.username, user.id, user.role)
 	return {"access_token": token, "token_type": "bearer"}
