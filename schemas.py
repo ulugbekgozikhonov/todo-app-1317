@@ -16,3 +16,12 @@ class CreateUserSchema(BaseModel):
 	password: str
 	role: str
 
+
+class UserChangePassword(BaseModel):
+	old_password: str
+	new_password: str
+
+
+class LoginSchema(BaseModel):
+	username: str
+	password: str
